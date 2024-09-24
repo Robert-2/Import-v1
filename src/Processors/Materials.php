@@ -4,10 +4,10 @@ declare(strict_types=1);
 namespace ImportV1\Processors;
 
 use ImportV1\Processor;
-use Robert2\API\Models\Material;
-use Robert2\API\Models\Park;
-use Robert2\API\Models\Category;
-use Robert2\API\Models\SubCategory;
+use Loxya\Models\Material;
+use Loxya\Models\Park;
+use Loxya\Models\Category;
+use Loxya\Models\SubCategory;
 
 class Materials extends Processor
 {
@@ -57,33 +57,24 @@ class Materials extends Processor
 
             $item['parkId'] = 1;
             if (!empty($item['ownerExt'])) {
-                $park = Park::where('name', $item['ownerExt'])->first();
-                if (!$park) {
-                    $newPark = new Park;
-                    $park = $newPark->edit(null, ['name' => $item['ownerExt']]);
-                }
+                $parkIdent = ['name' => $item['ownerExt']];
+                $park = Park::firstOrCreate($parkIdent, $parkIdent);
                 $item['parkId'] = (int)$park->id;
             }
 
-            $category = Category::where('name', $item['categorie'])->first();
-            if (!$category) {
-                $newCategory = new Category;
-                $category = $newCategory->edit(null, ['name' => $item['categorie']]);
-            }
+            $categoryIdent = ['name' => $item['categorie']];
+            $category = Category::firstOrCreate($categoryIdent, $categoryIdent);
             $item['categoryId'] = (int)$category->id;
 
+            $item['subCategoryId'] = null;
             if ($item['sousCateg'] !== null) {
-                $subcategory = SubCategory::where('name', $item['sousCateg'])->first();
-                if (!$subcategory) {
-                    $newSubcategory = new SubCategory;
-                    $subcategory = $newSubcategory->edit(null, [
-                        'name' => $item['sousCateg'],
-                        'category_id' => $item['categoryId'],
-                    ]);
-                }
+                $subcategoryIdent = ['name' => $item['sousCateg']];
+                $subCategoryData = [
+                    'name' => $item['sousCateg'],
+                    'category_id' => $item['categoryId'],
+                ];
+                $subcategory = SubCategory::firstOrCreate($subcategoryIdent, $subCategoryData);
                 $item['subCategoryId'] = (int)$subcategory->id;
-            } else {
-                $item['subCategoryId'] = null;
             }
 
             return $item;

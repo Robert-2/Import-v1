@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace ImportV1;
 
+use Loxya\Errors\Exception\ValidationException;
+
 class Processor
 {
     public $count = 0;
@@ -27,10 +29,18 @@ class Processor
             }
             $this->lastIndex = $index;
 
-            $newItem = array_merge($item, $this->forcedData);
-            $this->model->edit(null, $newItem);
+            try {
+                $newItem = array_merge($item, $this->forcedData);
+                $model = new $this->model($newItem);
+                $model->save();
 
-            $this->count += 1;
+                $this->count += 1;
+            } catch (ValidationException $e) {
+                $extendedException = new ValidationException(array_merge($e->getValidationErrors(), [
+                    'data' => $item
+                ]));
+                throw $extendedException;
+            }
         }
     }
 

@@ -9,7 +9,7 @@ class Application extends CoreApplication
 {
     public function __construct()
     {
-        parent::__construct("Scripts d'import des données de Robert v1 vers Robert2.");
+        parent::__construct("Scripts d'import des données de Robert v1 vers Loxya.");
 
         $this->addCommands([
             new Command\ImportCommand(),

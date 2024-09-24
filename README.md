@@ -56,4 +56,13 @@ Vous pouvez lancer les scripts d'import depuis le dossier `server` via :
 ./bin/console import [entité] [fichier-a-importer.php]
 ```
 
+Les entités utilisables sont les suivantes :
+
+```
+materials
+technicians
+companies
+beneficiaries
+```
+
 __Note:__ Utilisez `-h` (ou `--help`) pour obtenir la liste complète des commandes et leurs options.

@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace ImportV1\Processors;
 
 use ImportV1\Processor;
-use Robert2\API\Models\Person;
-use Robert2\API\Config;
+use Loxya\Models\Person;
+use Loxya\Models\Technician;
 
 class Technicians extends Processor
 {
@@ -13,10 +13,13 @@ class Technicians extends Processor
         'id' => null,
         'idUser' => null,
         'surnom' => ['type' => 'string', 'field' => 'nickname'],
-        'nom' => ['type' => 'string', 'field' => 'last_name'],
-        'prenom' => ['type' => 'string', 'field' => 'first_name'],
-        'email' => ['type' => 'string', 'field' => 'email'],
-        'tel' => ['type' => 'string', 'field' => 'phone'],
+        'prenom' => null,
+        'nom' => null,
+        'email' => null,
+        'tel' => null,
+        'adresse' => null,
+        'cp' => null,
+        'ville' => null,
         'GUSO' => null,
         'CS' => null,
         'birthDay' => null,
@@ -27,19 +30,16 @@ class Technicians extends Processor
         'SIRET' => null,
         'assedic' => null,
         'intermittent' => null,
-        'adresse' => ['type' => 'string', 'field' => 'street'],
-        'cp' => ['type' => 'string', 'field' => 'postal_code'],
-        'ville' => ['type' => 'string', 'field' => 'locality'],
         'diplomes_folder' => null,
 
         // Added in _preProcess method
+        'personId' => ['type' => 'int', 'field' => 'person_id'],
         'notes' => ['type' => 'string', 'field' => 'note'],
-        'tags' => ['type' => 'array', 'field' => 'tags'],
     ];
 
     public function __construct()
     {
-        $this->model = new Person;
+        $this->model = new Technician;
     }
 
     // ------------------------------------------------------
@@ -51,6 +51,23 @@ class Technicians extends Processor
     protected function _preProcess(array $data): array
     {
         return array_map(function ($item) {
+            $personData = [
+                'first_name' => $item['prenom'],
+                'last_name' => $item['nom'],
+                'email' => $item['email'],
+                'phone' => $item['tel'],
+                'street' => $item['adresse'],
+                'postal_code' => $item['cp'],
+                'locality' => $item['ville'],
+            ];
+            $personIdent = [
+                'first_name' => $item['prenom'],
+                'last_name' => $item['nom'],
+                'email' => $item['email'],
+            ];
+            $person = Person::firstOrCreate($personIdent, $personData);
+            $item['personId'] = (int)$person->id;
+
             $extraData = [
                 'SECU' => "N° de Sécurité Sociale",
                 'GUSO' => "N° GUSO",
@@ -75,9 +92,6 @@ class Technicians extends Processor
                 }
             }
             $item['notes'] = implode("\n", $notes);
-
-            $tagsConfig = Config\Config::getSettings('defaultTags');
-            $item['tags'] = [$tagsConfig['technician']];
 
             return $item;
         }, $data);

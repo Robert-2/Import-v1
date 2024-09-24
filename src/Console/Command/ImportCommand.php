@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace ImportV1\Console\Command;
 
-use Robert2\API\Errors\ValidationException;
+use Loxya\Errors\Exception\ValidationException;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -14,9 +14,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 class ImportCommand extends Command
 {
     protected const NAME = 'import';
-    protected const DESCRIPTION = "Importe des données depuis la première version de Robert (0.6.x)";
+    protected const DESCRIPTION = "Importe des données depuis la première version de Robert (0.6.x) dans Loxya.";
 
     protected $start = 0;
+    protected $preCount = 0;
     protected $entity;
     protected $sourceFile;
     protected $data;
@@ -64,10 +65,10 @@ class ImportCommand extends Command
 
         $this->initData();
 
-        $this->out('info', "Bonjour!\nCommençons l'import de l'entité « $this->entity » vers Robert2.");
-        $startMessage = "Importation de $this->preCount éléments";
+        $this->out('info', sprintf("Bonjour!\nCommençons l'import de l'entité « %s » vers Loxya.", $this->entity));
+        $startMessage = sprintf("Importation de %d éléments", $this->preCount);
         if ($this->start > 0) {
-            $startMessage .= ", en débutant à l'index $this->start";
+            $startMessage .= sprintf(", en débutant à l'index %d", $this->start);
         }
         $this->out('info', "$startMessage...");
 
