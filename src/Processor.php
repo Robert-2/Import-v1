@@ -1,0 +1,93 @@
+<?php
+declare(strict_types=1);
+
+namespace ImportV1;
+
+use Loxya\Errors\Exception\ValidationException;
+
+class Processor
+{
+    public $count = 0;
+    public $lastIndex = 0;
+    public $autoFieldsMap = [];
+
+    protected $model;
+    protected $data = [];
+    protected $forcedData = [];
+
+    public function import(array $data, int $fromIndex = 0)
+    {
+        if (method_exists($this, '_preProcess')) {
+            $data = $this->_preProcess($data);
+        }
+
+        $newData = $this->_convertAutoFields($data);
+
+        foreach ($newData as $index => $item) {
+            if ($index < $fromIndex) {
+                continue;
+            }
+            $this->lastIndex = $index;
+
+            try {
+                $newItem = array_merge($item, $this->forcedData);
+                $model = new $this->model($newItem);
+                $model->save();
+
+                $this->count += 1;
+            } catch (ValidationException $e) {
+                $extendedException = new ValidationException(array_merge($e->getValidationErrors(), [
+                    'data' => $item
+                ]));
+                throw $extendedException;
+            }
+        }
+    }
+
+    protected function _convertAutoFields(array $data): array
+    {
+        return array_map(function ($item) {
+            $newItem = [];
+            foreach ($item as $field => $value) {
+                if (!array_key_exists($field, $this->autoFieldsMap) || empty($this->autoFieldsMap[$field])) {
+                    continue;
+                }
+
+                $newField = $this->autoFieldsMap[$field]['field'];
+                if (empty($value) && !($value === '0' || $value === 0 || $value === false)) {
+                    $newItem[$newField] = null;
+                    continue;
+                }
+
+                switch ($this->autoFieldsMap[$field]['type']) {
+                    case 'int':
+                        $newItem[$newField] = (int)$value;
+                        break;
+                    case 'float':
+                        $newItem[$newField] = (float)$value;
+                        break;
+                    case 'bool':
+                        $newItem[$newField] = (bool)$value;
+                        break;
+                    case 'array':
+                        $newItem[$newField] = (array)$value;
+                        break;
+                    default:
+                        $newItem[$newField] = (string)$value;
+                }
+            }
+            return $newItem;
+        }, $data);
+    }
+
+    // ------------------------------------------------------
+    // -
+    // -    Méthode à overwriter
+    // -
+    // ------------------------------------------------------
+
+    protected function _preProcess(array $data): array
+    {
+        return $data;
+    }
+}
